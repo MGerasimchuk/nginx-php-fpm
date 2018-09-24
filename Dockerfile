@@ -33,36 +33,36 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
     --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
     --user=nginx \
     --group=nginx \
+    --with-http_ssl_module \
     --with-http_addition_module \
     --with-http_sub_module \
     --with-http_dav_module \
     --with-http_stub_status_module \
     --with-threads \
+    --with-stream_ssl_module \
+    --with-stream_ssl_preread_module \
     --with-http_slice_module \
     --with-compat \
     --with-file-aio \
     --with-http_v2_module \
     --add-module=/usr/src/ngx_devel_kit-$DEVEL_KIT_MODULE_VERSION \
-    --add-module=/usr/src/lua-nginx-module-$LUA_MODULE_VERSION \
   " \
   && addgroup -S nginx \
-  && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \ 
+  && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
   && apk add --no-cache --virtual .build-deps \
     autoconf \
     gcc \
     libc-dev \
     make \
+    libressl-dev \
     pcre-dev \
     zlib-dev \
     linux-headers \
     curl \
     gnupg \
-    gd-dev \
-    luajit-dev \
   && curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
   && curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
   && curl -fSL https://github.com/simpl/ngx_devel_kit/archive/v$DEVEL_KIT_MODULE_VERSION.tar.gz -o ndk.tar.gz \
-  && curl -fSL https://github.com/openresty/lua-nginx-module/archive/v$LUA_MODULE_VERSION.tar.gz -o lua.tar.gz \
   && export GNUPGHOME="$(mktemp -d)" \
   && found=''; \
   for server in \
@@ -80,8 +80,6 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
   && mkdir -p /usr/src \
   && tar -zxC /usr/src -f nginx.tar.gz \
   && tar -zxC /usr/src -f ndk.tar.gz \
-  && tar -zxC /usr/src -f lua.tar.gz \
-  && rm nginx.tar.gz ndk.tar.gz lua.tar.gz \ 
   && cd /usr/src/nginx-$NGINX_VERSION \
   && ./configure $CONFIG --with-debug \
   && make -j$(getconf _NPROCESSORS_ONLN) \
@@ -133,23 +131,22 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     curl \
     libcurl \
     augeas-dev \
+    libressl-dev \
     ca-certificates \
     dialog \
     autoconf \
     make \
     gcc \
     linux-headers \
+    libmcrypt-dev \
     icu-dev \
     libpq \
     libffi-dev \
     freetype-dev \
     $PHPIZE_DEPS && \
-    docker-php-ext-configure gd \
-      --with-gd \
-      --with-freetype-dir=/usr/include/ && \
     #curl iconv session
     #docker-php-ext-install pdo_mysql pdo_sqlite mysqli mcrypt gd exif intl xsl json soap dom zip opcache && \
-    docker-php-ext-install iconv gd exif intl json soap dom zip opcache && \
+    docker-php-ext-install iconv intl json opcache && \
     pecl install mongodb-1.5.3 && \
     docker-php-ext-enable mongodb && \
     docker-php-source delete && \
@@ -175,6 +172,7 @@ ADD conf/nginx.conf /etc/nginx/nginx.conf
 # nginx site conf
 RUN mkdir -p /etc/nginx/sites-available/ && \
 mkdir -p /etc/nginx/sites-enabled/ && \
+mkdir -p /etc/nginx/ssl/ && \
 rm -Rf /var/www/* && \
 mkdir /var/www/html/
 ADD conf/nginx-site.conf /etc/nginx/sites-available/default.conf
@@ -215,7 +213,7 @@ RUN chmod 755 /usr/bin/pull && chmod 755 /usr/bin/push && chmod 755 /start.sh
 ADD src/ /var/www/html/
 
 
-EXPOSE 80
+EXPOSE 443 80
 
 WORKDIR "/var/www/html"
 
