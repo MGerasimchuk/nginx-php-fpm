@@ -167,10 +167,6 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     supervisor \
     curl \
     libcurl \
-    git \
-    python \
-    python-dev \
-    py-pip \
     augeas-dev \
     libressl-dev \
     ca-certificates \
@@ -187,8 +183,8 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     libxslt-dev \
     libffi-dev \
     freetype-dev \
-    sqlite-dev \
-    libjpeg-turbo-dev && \
+    libjpeg-turbo-dev \
+    $PHPIZE_DEPS && \
     docker-php-ext-configure gd \
       --with-gd \
       --with-freetype-dir=/usr/include/ \
@@ -196,8 +192,9 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
       --with-jpeg-dir=/usr/include/ && \
     #curl iconv session
     #docker-php-ext-install pdo_mysql pdo_sqlite mysqli mcrypt gd exif intl xsl json soap dom zip opcache && \
-    docker-php-ext-install iconv pdo_mysql pdo_sqlite mysqli gd exif intl xsl json soap dom zip opcache && \
-    pecl install xdebug-2.6.0 && \
+    docker-php-ext-install iconv gd exif intl xsl json soap dom zip opcache && \
+    pecl install mongodb-1.5.3 && \
+    docker-php-ext-enable mongodb && \
     docker-php-source delete && \
     mkdir -p /etc/nginx && \
     mkdir -p /var/www/app && \
@@ -208,10 +205,7 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     php -r "if (hash_file('SHA384', 'composer-setup.php') === '${EXPECTED_COMPOSER_SIGNATURE}') { echo 'Composer.phar Installer verified'; } else { echo 'Composer.phar Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" && \
     php composer-setup.php --install-dir=/usr/bin --filename=composer && \
     php -r "unlink('composer-setup.php');"  && \
-    pip install -U pip && \
-    pip install -U certbot && \
-    mkdir -p /etc/letsencrypt/webrootauth && \
-    apk del gcc musl-dev linux-headers libffi-dev augeas-dev python-dev make autoconf
+    apk del gcc musl-dev linux-headers libffi-dev augeas-dev make autoconf
 #    apk del .sys-deps
 #    ln -s /usr/bin/php7 /usr/bin/php
 
@@ -260,9 +254,7 @@ RUN echo "cgi.fix_pathinfo=0" > ${php_vars} &&\
 ADD scripts/start.sh /start.sh
 ADD scripts/pull /usr/bin/pull
 ADD scripts/push /usr/bin/push
-ADD scripts/letsencrypt-setup /usr/bin/letsencrypt-setup
-ADD scripts/letsencrypt-renew /usr/bin/letsencrypt-renew
-RUN chmod 755 /usr/bin/pull && chmod 755 /usr/bin/push && chmod 755 /usr/bin/letsencrypt-setup && chmod 755 /usr/bin/letsencrypt-renew && chmod 755 /start.sh
+RUN chmod 755 /usr/bin/pull && chmod 755 /usr/bin/push && chmod 755 /start.sh
 
 # copy in code
 ADD src/ /var/www/html/
@@ -272,4 +264,5 @@ ADD errors/ /var/www/errors
 EXPOSE 443 80
 
 WORKDIR "/var/www/html"
+
 CMD ["/start.sh"]
