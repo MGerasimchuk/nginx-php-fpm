@@ -110,9 +110,23 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
   \
   # forward request and error logs to docker log collector
   && ln -sf /dev/stdout /var/log/nginx/access.log \
-  && ln -sf /dev/stderr /var/log/nginx/error.log
-
-  #apk del bash openssh-client wget augeas-dev dialog autoconf make gcc linux-headers libmcrypt-dev icu-dev libpq libffi-dev freetype-dev -r
+  && ln -sf /dev/stderr /var/log/nginx/error.log && \
+  apk del \
+      bash \
+      openssh-client \
+      wget \
+      augeas-dev \
+      dialog \
+      autoconf \
+      make \
+      gcc \
+      linux-headers \
+      libmcrypt-dev \
+      #icu-dev \
+      libpq \
+      libffi-dev \
+      freetype-dev \
+      -r
 
 RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
     echo /etc/apk/respositories && \
