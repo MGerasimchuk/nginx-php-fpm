@@ -34,17 +34,10 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
     --user=nginx \
     --group=nginx \
     --with-http_ssl_module \
-    --with-http_addition_module \
-    --with-http_sub_module \
-    --with-http_dav_module \
-    --with-http_stub_status_module \
-    --with-threads \
     --with-stream_ssl_module \
     --with-stream_ssl_preread_module \
-    --with-http_slice_module \
-    --with-compat \
-    --with-file-aio \
     --with-http_v2_module \
+    --without-http_gzip_module \
     --add-module=/usr/src/ngx_devel_kit-$DEVEL_KIT_MODULE_VERSION \
   " \
   && addgroup -S nginx \
@@ -56,7 +49,6 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
     make \
     libressl-dev \
     pcre-dev \
-    zlib-dev \
     linux-headers \
     curl \
     gnupg \
@@ -120,6 +112,8 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
   && ln -sf /dev/stdout /var/log/nginx/access.log \
   && ln -sf /dev/stderr /var/log/nginx/error.log
 
+  #apk del bash openssh-client wget augeas-dev dialog autoconf make gcc linux-headers libmcrypt-dev icu-dev libpq libffi-dev freetype-dev -r
+
 RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
     echo /etc/apk/respositories && \
     apk update && apk upgrade &&\
@@ -159,7 +153,22 @@ RUN echo @testing http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repo
     php -r "if (hash_file('SHA384', 'composer-setup.php') === '${EXPECTED_COMPOSER_SIGNATURE}') { echo 'Composer.phar Installer verified'; } else { echo 'Composer.phar Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" && \
     php composer-setup.php --install-dir=/usr/bin --filename=composer && \
     php -r "unlink('composer-setup.php');"  && \
-    apk del gcc linux-headers libffi-dev augeas-dev make autoconf
+    apk del \
+        bash \
+        openssh-client \
+        wget \
+        augeas-dev \
+        dialog \
+        autoconf \
+        make \
+        gcc \
+        linux-headers \
+        libmcrypt-dev \
+        #icu-dev \
+        libpq \
+        libffi-dev \
+        freetype-dev \
+        -r
 #    apk del .sys-deps
 #    ln -s /usr/bin/php7 /usr/bin/php
 
